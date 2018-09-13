@@ -46,6 +46,8 @@ static void fan5345_disable(struct backlight_device *bl)
 
 	fanbl->cur_level = 0;
 	gpiod_set_value_cansleep(fanbl->level_gpio, false);
+  // The gpio must be low for 1ms to cause a shutdown.
+  mdelay(1);
 }
 
 static int fan5345_set_level(struct backlight_device *bl)
@@ -55,15 +57,15 @@ static int fan5345_set_level(struct backlight_device *bl)
 	if(bl->props.brightness < MIN_STEP)
 		fan5345_disable(bl);
 
-	/*
-	 * The minimum time between pulses is 500ns. Don't think any blocking is 
-	 * needed.
-	 */
 	// Match the actual brightness to the user-requested brightness.
 	while(fanbl->cur_level != bl->props.brightness) {
 		// Pulse the GPIO off and on again.
 		gpiod_set_value_cansleep(fanbl->level_gpio, false);
+      // The minimum time between pulses is 500ns.
+      ndelay(500);
 		gpiod_set_value_cansleep(fanbl->level_gpio, true);
+      // The minimum time between pulses is 500ns.
+      ndelay(500);
 
 		DIR(fanbl->cur_level);	
 
